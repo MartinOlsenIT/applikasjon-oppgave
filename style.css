@@ -1,4 +1,4 @@
-/* ===========================================================
+﻿/* ===========================================================
    Bergen Tang og Tare AS — Kundesupport
    Design tokens
    =========================================================== */
@@ -444,6 +444,9 @@ select[aria-invalid="true"] {
   justify-content: center;
   padding: 20px;
   z-index: 200;
+}
+.dialog-overlay[hidden] {
+  display: none;
 }
 .dialog {
   background: #fff;
