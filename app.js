@@ -60,7 +60,7 @@ async function lastKategorier() {
   const redigerSelect = document.getElementById('rediger-kategori');
   const options = kategoriListe.map(k => `<option value="${k.id}">${escapeHtml(k.namn)}</option>`).join('');
   if (select) select.innerHTML = '<option value="">Velg kategori …</option>' + options;
-  if (redigerSelect) redigerSelect.innerHTML = options;
+  if (redigerSelect) redigerSelect.innerHTML = '<option value="">Ukategorisert</option>' + options;
 }
 
 // ===========================================================
@@ -263,11 +263,12 @@ formNy.addEventListener('submit', async (e) => {
 
   document.getElementById('err-tittel').textContent = '';
   document.getElementById('err-beskrivelse').textContent = '';
+  document.getElementById('err-kategori').textContent = '';
 
   let harFeil = false;
   if (tittel.length < 3) { document.getElementById('err-tittel').textContent = 'Skriv en tittel på minst 3 tegn.'; harFeil = true; }
   if (beskrivelse.length < 10) { document.getElementById('err-beskrivelse').textContent = 'Beskriv spørsmålet med minst 10 tegn.'; harFeil = true; }
-  if (!kategoriId) { harFeil = true; }
+  if (!kategoriId) { document.getElementById('err-kategori').textContent = 'Velg en kategori.'; harFeil = true; }
   if (harFeil) return;
 
   const submitBtn = formNy.querySelector('button[type="submit"]');
@@ -403,7 +404,8 @@ formRediger.addEventListener('submit', async (e) => {
   e.preventDefault();
   const tittel = document.getElementById('rediger-tittel').value.trim();
   const beskrivelse = document.getElementById('rediger-beskrivelse').value.trim();
-  const kategoriId = document.getElementById('rediger-kategori').value;
+  const kategoriIdRaw = document.getElementById('rediger-kategori').value;
+  const kategoriId = kategoriIdRaw === '' ? null : kategoriIdRaw;
 
   if (tittel.length < 3 || beskrivelse.length < 10) {
     statusRediger.dataset.state = 'error';
