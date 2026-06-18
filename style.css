@@ -1,0 +1,487 @@
+/* ===========================================================
+   Bergen Tang og Tare AS — Kundesupport
+   Design tokens
+   =========================================================== */
+:root {
+  /* Farger — mørk tang/tare-teal som hovedfarge (matcher GPO-bakgrunn), med en varm korall-aksent (tang-skudd) for handling */
+  --c-bg: #f4f7f6;
+  --c-surface: #ffffff;
+  --c-deepteal: #0c3b36;
+  --c-teal: #145c52;
+  --c-teal-soft: #e2efec;
+  --c-coral: #e8633c;
+  --c-coral-dark: #c14d2a;
+  --c-ink: #16241f;
+  --c-ink-muted: #50645d;
+  --c-border: #d4e0dc;
+  --c-error: #b3261e;
+  --c-error-bg: #fbeae8;
+  --c-success-bg: #e7f3ee;
+  --c-success-ink: #0c3b36;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 4px 16px rgba(12, 59, 54, 0.08);
+  --shadow-lg: 0 12px 40px rgba(12, 59, 54, 0.22);
+
+  --focus-ring: 3px solid #2f7df0;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--c-ink);
+  background: var(--c-bg);
+  line-height: 1.55;
+  font-size: 16px;
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- Skip link / a11y helpers ---------- */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--c-coral);
+  color: #fff;
+  padding: 12px 20px;
+  z-index: 100;
+  border-radius: 0 0 var(--radius-sm) 0;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Topbar ---------- */
+.topbar {
+  background: var(--c-deepteal);
+  color: #fff;
+}
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-mark { color: #8fd4c4; display: flex; }
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.brand-text strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.brand-sub {
+  font-size: 0.8rem;
+  color: #a8c9c2;
+}
+
+.topnav {
+  display: flex;
+  gap: 8px;
+}
+.navbtn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #e7f3ee;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.navbtn:hover { background: rgba(255,255,255,0.08); }
+.navbtn[aria-current="page"] {
+  background: var(--c-coral);
+  border-color: var(--c-coral);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  padding: 48px 0 28px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  font-weight: 600;
+  color: var(--c-deepteal);
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+.hero-lede {
+  font-size: 1.05rem;
+  color: var(--c-ink-muted);
+  max-width: 56ch;
+  margin: 0 0 24px;
+}
+.hero-info {
+  background: var(--c-teal-soft);
+  border-left: 4px solid var(--c-teal);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+}
+.hero-info-tittel {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-deepteal);
+}
+.hero-info p { margin: 0; color: var(--c-ink); }
+.hero-info a { color: var(--c-teal); font-weight: 600; }
+
+/* ---------- Views / Sections ---------- */
+.view {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px;
+  margin-bottom: 48px;
+}
+.view h2 {
+  font-family: var(--font-display);
+  color: var(--c-deepteal);
+  font-size: 1.5rem;
+  margin: 0 0 8px;
+}
+.view-lede {
+  color: var(--c-ink-muted);
+  margin: 0 0 28px;
+}
+
+/* ---------- Forms ---------- */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 560px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+.field {
+  margin-bottom: 20px;
+  border: none;
+  padding: 0;
+}
+.field legend { padding: 0; }
+.field label, .field legend {
+  display: block;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--c-ink);
+  margin-bottom: 6px;
+}
+.required { color: var(--c-coral-dark); }
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 11px 14px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--c-ink);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--c-teal);
+}
+textarea { resize: vertical; min-height: 100px; }
+
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--c-ink-muted);
+  margin: 6px 0 0;
+}
+.field-error {
+  font-size: 0.85rem;
+  color: var(--c-error);
+  margin: 6px 0 0;
+  font-weight: 600;
+  min-height: 1.2em;
+}
+.field-error:empty { display: none; }
+
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: var(--c-error);
+  background: var(--c-error-bg);
+}
+
+.radio-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.radio-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--c-border);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.radio-pill:has(input:checked) {
+  border-color: var(--c-teal);
+  background: var(--c-teal-soft);
+  color: var(--c-deepteal);
+  font-weight: 700;
+}
+.radio-pill input { margin: 0; accent-color: var(--c-teal); }
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.form-status {
+  margin-top: 14px;
+  font-weight: 600;
+  min-height: 1.2em;
+}
+.form-status[data-state="ok"] {
+  color: var(--c-success-ink);
+  background: var(--c-success-bg);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+}
+.form-status[data-state="error"] {
+  color: var(--c-error);
+  background: var(--c-error-bg);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: var(--font-body);
+  font-size: 0.97rem;
+  font-weight: 700;
+  padding: 12px 26px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: var(--c-coral);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--c-coral-dark); }
+.btn-ghost {
+  background: transparent;
+  border-color: var(--c-border);
+  color: var(--c-ink);
+}
+.btn-ghost:hover { background: var(--c-teal-soft); }
+.btn-danger {
+  background: var(--c-error);
+  color: #fff;
+}
+.btn-danger:hover { background: #8f1f19; }
+.btn-sm { padding: 8px 16px; font-size: 0.88rem; }
+
+/* ---------- Sak-resultat (visning av en sak) ---------- */
+.sak-kort {
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-top: 24px;
+}
+.sak-kort-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.sak-kort-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--c-deepteal);
+}
+.sak-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--c-teal-soft);
+  color: var(--c-deepteal);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.tag-status-ny { background: #e2efec; color: #0c3b36; }
+.tag-status-under_behandling { background: #fff3da; color: #8a5d00; }
+.tag-status-lost { background: #e1f0e6; color: #1d6b3a; }
+.tag-prioritet-hoy { background: #fbe4de; color: var(--c-coral-dark); }
+
+.sak-beskrivelse {
+  color: var(--c-ink);
+  white-space: pre-wrap;
+}
+.sak-kort-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.sak-case-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  background: var(--c-deepteal);
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
+/* ---------- Svar-tråd ---------- */
+.svar-seksjon {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1.5px solid var(--c-border);
+}
+.svar-seksjon h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--c-deepteal);
+  margin: 0 0 14px;
+}
+.svar-bobbel {
+  background: var(--c-teal-soft);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.svar-bobbel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.svar-bobbel p { margin: 0; color: var(--c-ink); white-space: pre-wrap; }
+
+/* ---------- Dialog (modal) ---------- */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 30, 27, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+.dialog {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.dialog-sm { max-width: 420px; }
+.dialog h2 {
+  font-family: var(--font-display);
+  color: var(--c-deepteal);
+  margin: 0 0 14px;
+  font-size: 1.3rem;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ---------- Footer ---------- */
+.sitefoot {
+  border-top: 1px solid var(--c-border);
+  padding: 24px 0 48px;
+  margin-top: 24px;
+}
+.sitefoot p {
+  color: var(--c-ink-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ---------- High contrast / forced-colors support ---------- */
+@media (forced-colors: active) {
+  .btn, .navbtn, .tag, .radio-pill { border: 1px solid currentColor; }
+}

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bergen Tang og Tare AS — Kundesupport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#hovedinnhold">Hopp til hovedinnhold</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="36" height="36">
+          <path d="M24 4 C18 14 14 18 14 26 C14 35 19 42 24 44 C29 42 34 35 34 26 C34 18 30 14 24 4 Z" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <path d="M24 12 C21 19 19 22 19 27 C19 33 21 38 24 40" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <strong>Bergen Tang og Tare</strong>
+        <span class="brand-sub">Kundesupport</span>
+      </span>
+    </div>
+    <nav class="topnav" aria-label="Hovednavigasjon">
+      <button type="button" class="navbtn" data-view="ny" aria-current="page">Send spørsmål</button>
+      <button type="button" class="navbtn" data-view="finn">Finn sak</button>
+    </nav>
+  </div>
+</header>
+
+<main id="hovedinnhold" class="wrap">
+
+  <section class="hero" aria-labelledby="hero-tittel">
+    <h1 id="hero-tittel">Vi er her for å hjelpe</h1>
+    <p class="hero-lede">Har du et teknisk spørsmål, eller trenger du assistanse med utstyret fra Bergen Tang og Tare? Send oss en henvendelse under, eller finn igjen en sak du allerede har sendt.</p>
+    <div class="hero-info" role="note">
+      <h2 class="hero-info-tittel">Trenger du hjelp på stedet?</h2>
+      <p>Ring oss på <a href="tel:+4755000000">55 00 00 00</a> i åpningstiden (08–16), eller møt opp på anlegget vårt på Litlabø — en av våre teknikere tar deg gjerne imot.</p>
+    </div>
+  </section>
+
+  <!-- VISNING: Send nytt spørsmål -->
+  <section id="view-ny" class="view" aria-labelledby="ny-tittel">
+    <h2 id="ny-tittel">Send et nytt spørsmål</h2>
+    <p class="view-lede">Fyll ut formularet under. Du får et sakenummer du kan bruke for å følge opp, endre eller slette spørsmålet senere.</p>
+
+    <form id="form-ny" novalidate>
+      <div class="grid-2">
+        <div class="field">
+          <label for="navn">Fullt navn <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="navn" name="navn" autocomplete="name" required aria-required="true">
+          <p class="field-error" id="err-navn" role="alert"></p>
+        </div>
+        <div class="field">
+          <label for="epost">E-postadresse <span class="required" aria-hidden="true">*</span></label>
+          <input type="email" id="epost" name="epost" autocomplete="email" required aria-required="true" aria-describedby="hint-epost">
+          <p class="field-hint" id="hint-epost">Brukes til å finne tilbake til saken din.</p>
+          <p class="field-error" id="err-epost" role="alert"></p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="telefon">Telefonnummer</label>
+          <input type="tel" id="telefon" name="telefon" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label for="kategori">Kategori <span class="required" aria-hidden="true">*</span></label>
+          <select id="kategori" name="kategori" required aria-required="true">
+            <option value="">Velg kategori …</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="tittel">Tittel på spørsmålet <span class="required" aria-hidden="true">*</span></label>
+        <input type="text" id="tittel" name="tittel" required aria-required="true" maxlength="200">
+        <p class="field-error" id="err-tittel" role="alert"></p>
+      </div>
+
+      <div class="field">
+        <label for="beskrivelse">Beskrivelse <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="beskrivelse" name="beskrivelse" rows="5" required aria-required="true" aria-describedby="hint-beskrivelse"></textarea>
+        <p class="field-hint" id="hint-beskrivelse">Beskriv så detaljert du kan — gjerne med utstyrstype og når problemet startet.</p>
+        <p class="field-error" id="err-beskrivelse" role="alert"></p>
+      </div>
+
+      <fieldset class="field">
+        <legend>Prioritet</legend>
+        <div class="radio-row">
+          <label class="radio-pill"><input type="radio" name="prioritet" value="lav"> Lav</label>
+          <label class="radio-pill"><input type="radio" name="prioritet" value="medium" checked> Medium</label>
+          <label class="radio-pill"><input type="radio" name="prioritet" value="hoy"> Høy</label>
+        </div>
+      </fieldset>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Send spørsmål</button>
+      </div>
+      <p class="form-status" id="status-ny" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <!-- VISNING: Finn / administrer sak -->
+  <section id="view-finn" class="view" hidden aria-labelledby="finn-tittel">
+    <h2 id="finn-tittel">Finn saken din</h2>
+    <p class="view-lede">Skriv inn sakenummeret og e-postadressen du brukte da du sendte spørsmålet.</p>
+
+    <form id="form-finn" novalidate>
+      <div class="grid-2">
+        <div class="field">
+          <label for="finn-case">Sakenummer <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="finn-case" name="finn-case" placeholder="f.eks. BTT-7K2P" required aria-required="true">
+        </div>
+        <div class="field">
+          <label for="finn-epost">E-postadresse <span class="required" aria-hidden="true">*</span></label>
+          <input type="email" id="finn-epost" name="finn-epost" required aria-required="true">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Finn sak</button>
+      </div>
+      <p class="form-status" id="status-finn" role="status" aria-live="polite"></p>
+    </form>
+
+    <div id="sak-resultat" hidden></div>
+  </section>
+
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p>Bergen Tang og Tare AS · bergentangogtare.no · Org.nr. 000 000 000</p>
+  </div>
+</footer>
+
+<div id="dialog-rediger" class="dialog-overlay" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-tittel">
+    <h2 id="dialog-tittel">Rediger spørsmål</h2>
+    <form id="form-rediger" novalidate>
+      <input type="hidden" id="rediger-id">
+      <div class="field">
+        <label for="rediger-tittel">Tittel <span class="required" aria-hidden="true">*</span></label>
+        <input type="text" id="rediger-tittel" required aria-required="true">
+      </div>
+      <div class="field">
+        <label for="rediger-beskrivelse">Beskrivelse <span class="required" aria-hidden="true">*</span></label>
+        <textarea id="rediger-beskrivelse" rows="5" required aria-required="true"></textarea>
+      </div>
+      <div class="field">
+        <label for="rediger-kategori">Kategori</label>
+        <select id="rediger-kategori"></select>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost" id="btn-avbryt-rediger">Avbryt</button>
+        <button type="submit" class="btn btn-primary">Lagre endringer</button>
+      </div>
+      <p class="form-status" id="status-rediger" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
+
+<div id="dialog-slett" class="dialog-overlay" hidden>
+  <div class="dialog dialog-sm" role="alertdialog" aria-modal="true" aria-labelledby="slett-tittel" aria-describedby="slett-tekst">
+    <h2 id="slett-tittel">Slette spørsmålet?</h2>
+    <p id="slett-tekst">Dette kan ikke angres. Saken blir permanent fjernet.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-ghost" id="btn-avbryt-slett">Avbryt</button>
+      <button type="button" class="btn btn-danger" id="btn-bekreft-slett">Slett saken</button>
+    </div>
+  </div>
+</div>
+
+<div id="aria-announcer" class="sr-only" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+</body>
+</html>

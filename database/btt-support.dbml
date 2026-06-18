@@ -1,0 +1,93 @@
+// Bergen Tang og Tare AS — Databasemodell for kundesupport-applikasjon
+// Implementert i Supabase (Postgres) med Row Level Security.
+// id-felt er uuid i den faktiske implementasjonen (Supabase-standard),
+// vist som integer her for enklere lesing i dbdiagram.io.
+
+Table kunder {
+  id integer [primary key, increment]
+  navn varchar(100) [not null]
+  epost varchar(150) [not null, unique]
+  telefon varchar(20)
+  bedrift varchar(100)
+  opprettet_dato timestamp [default: `now()`]
+
+  Note: "Kundar som sender inn førespurnadar. Identifisert via e-post + sakenummer, ingen full innlogging."
+}
+
+Table ansatte {
+  id integer [primary key, increment]
+  navn varchar(100) [not null]
+  epost varchar(150) [not null, unique]
+  rolle varchar(50) [not null]
+  aktiv boolean [default: true]
+
+  Note: "Speilar AD-brukarane (Leiar, Sekretær, Tekniker, Utvikler)."
+}
+
+Table kategorier {
+  id integer [primary key, increment]
+  namn varchar(100) [not null, unique]
+  beskrivelse varchar(255)
+
+  Note: "T.d. 'Teknisk problem', 'Vedlikehold / service'. Egen tabell for skalerbarheit."
+}
+
+Table forespørsler {
+  id integer [primary key, increment]
+  case_nummer varchar(12) [not null, unique]
+  kunde_id integer [not null, ref: > kunder.id]
+  kategori_id integer [not null, ref: > kategorier.id]
+  tildelt_ansatt_id integer [ref: > ansatte.id]
+  tittel varchar(200) [not null]
+  beskrivelse text [not null]
+  prioritet varchar(10) [not null, default: 'medium']
+  status varchar(20) [not null, default: 'ny']
+  opprettet_dato timestamp [default: `now()`]
+  oppdatert_dato timestamp
+  lost_dato timestamp
+
+  Note: "prioritet: 'lav'|'medium'|'hoy'. status: 'ny'|'under_behandling'|'lost'. case_nummer er det kunden bruker for å finne saken sin (CRUD-tilgangskontroll på applikasjonsnivå)."
+}
+
+Table svar {
+  id integer [primary key, increment]
+  forespørsel_id integer [not null, ref: > forespørsler.id]
+  ansatt_id integer [not null, ref: > ansatte.id]
+  innhold text [not null]
+  opprettet_dato timestamp [default: `now()`]
+
+  Note: "Svar SYNLEGE for kunden. Vises i kundeportalen under saken."
+}
+
+Table interne_kommentarer {
+  id integer [primary key, increment]
+  forespørsel_id integer [not null, ref: > forespørsler.id]
+  ansatt_id integer [not null, ref: > ansatte.id]
+  innhold text [not null]
+  opprettet_dato timestamp [default: `now()`]
+
+  Note: "Notat KUN synlege for ansatte, ALDRI for kunden. Fysisk separert frå svar-tabellen og RLS-blokkert for anon-rollen i Supabase — innebygd personvern, ikkje berre eit 'privat'-flagg."
+}
+
+Table vedlegg {
+  id integer [primary key, increment]
+  forespørsel_id integer [ref: > forespørsler.id]
+  svar_id integer [ref: > svar.id]
+  filnavn varchar(255) [not null]
+  filsti varchar(500) [not null]
+  filtype varchar(50)
+  filstorrelse_kb integer
+  opprettet_dato timestamp [default: `now()`]
+
+  Note: "Kan høyre til forespørsel ELLER svar. Ikke implementert i prototypen (filopplasting utenfor scope), men modellert for fremtidig utvidelse."
+}
+
+Table vurderinger {
+  id integer [primary key, increment]
+  forespørsel_id integer [not null, unique, ref: > forespørsler.id]
+  poengsum integer [not null]
+  kommentar text
+  opprettet_dato timestamp [default: `now()`]
+
+  Note: "Kunden sin vurdering etter løst sak. Unique constraint hindrer duplikate vurderinger. Ikke implementert i prototypen."
+}
