@@ -53,6 +53,15 @@ async function sjekkInnloggingVedStart() {
   }
 }
 
+async function tryggSignOut() {
+  try {
+    await sb.auth.signOut();
+  } catch (err) {
+    // Server-sesjonen kan allerede være ugyldig (403) - det er greit, vi rydder lokalt uansett
+    console.warn('signOut feilet (sesjonen var sannsynligvis allerede ugyldig):', err);
+  }
+}
+
 async function etterInnlogging(authUser) {
   const { data: ansatt, error } = await sb
     .from('ansatte')
@@ -63,13 +72,13 @@ async function etterInnlogging(authUser) {
   if (error || !ansatt) {
     document.getElementById('status-login').dataset.state = 'error';
     document.getElementById('status-login').textContent = 'Fant ingen ansattprofil knyttet til denne kontoen. Kontakt administrator.';
-    await sb.auth.signOut();
+    await tryggSignOut();
     return;
   }
   if (!ansatt.aktiv) {
     document.getElementById('status-login').dataset.state = 'error';
     document.getElementById('status-login').textContent = 'Denne kontoen er deaktivert.';
-    await sb.auth.signOut();
+    await tryggSignOut();
     return;
   }
 
@@ -112,7 +121,7 @@ formLogin.addEventListener('submit', async (e) => {
 });
 
 document.getElementById('btn-logg-ut').addEventListener('click', async () => {
-  await sb.auth.signOut();
+  await tryggSignOut();
   innloggetAnsatt = null;
   ansattNav.hidden = true;
   visView(viewLogin);
