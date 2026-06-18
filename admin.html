@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bergen Tang og Tare AS — Ansattportal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4 C18 14 14 18 14 26 C14 35 19 42 24 44 C29 42 34 35 34 26 C34 18 30 14 24 4 Z' fill='none' stroke='%230c3b36' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<a class="skip-link" href="#hovedinnhold">Hopp til hovedinnhold</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="36" height="36">
+          <path d="M24 4 C18 14 14 18 14 26 C14 35 19 42 24 44 C29 42 34 35 34 26 C34 18 30 14 24 4 Z" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <path d="M24 12 C21 19 19 22 19 27 C19 33 21 38 24 40" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <strong>Bergen Tang og Tare</strong>
+        <span class="brand-sub">Ansattportal</span>
+      </span>
+    </div>
+    <nav class="topnav" aria-label="Hovednavigasjon" id="ansatt-nav" hidden>
+      <span class="ansatt-navn" id="innlogget-navn"></span>
+      <button type="button" class="navbtn" id="btn-logg-ut">Logg ut</button>
+    </nav>
+  </div>
+</header>
+
+<main id="hovedinnhold" class="wrap">
+
+  <!-- VISNING: Innlogging -->
+  <section id="view-login" class="view" aria-labelledby="login-tittel">
+    <h2 id="login-tittel">Logg inn</h2>
+    <p class="view-lede">Logg inn med din ansatt-e-post for å se og svare på kundeforespørsler.</p>
+
+    <form id="form-login" novalidate>
+      <div class="field">
+        <label for="login-epost">E-postadresse <span class="required" aria-hidden="true">*</span></label>
+        <input type="email" id="login-epost" autocomplete="username" required aria-required="true">
+      </div>
+      <div class="field">
+        <label for="login-passord">Passord <span class="required" aria-hidden="true">*</span></label>
+        <input type="password" id="login-passord" autocomplete="current-password" required aria-required="true">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Logg inn</button>
+      </div>
+      <p class="form-status" id="status-login" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <!-- VISNING: Sak-oversikt (kun innloggede) -->
+  <section id="view-saker" class="view" hidden aria-labelledby="saker-tittel">
+    <div class="saker-head">
+      <div>
+        <h2 id="saker-tittel">Innkomne forespørsler</h2>
+        <p class="view-lede">Alle kundeforespørsler, nyeste først.</p>
+      </div>
+      <div class="filter-row">
+        <label for="filter-status" class="sr-only">Filtrer på status</label>
+        <select id="filter-status">
+          <option value="">Alle statuser</option>
+          <option value="ny">Ny</option>
+          <option value="under_behandling">Under behandling</option>
+          <option value="lost">Løst</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="sak-liste" aria-live="polite"></div>
+  </section>
+
+  <!-- VISNING: Detalj for én sak -->
+  <section id="view-detalj" class="view" hidden aria-labelledby="detalj-tittel">
+    <button type="button" class="btn btn-ghost btn-sm" id="btn-tilbake-liste">← Tilbake til listen</button>
+    <div id="detalj-innhold"></div>
+  </section>
+
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p>Bergen Tang og Tare AS · Ansattportal · Intern bruk</p>
+  </div>
+</footer>
+
+<div id="aria-announcer" class="sr-only" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+/* ===========================================================
+   Bergen Tang og Tare AS — Ansattportal
+   Tillegg til style.css
+   =========================================================== */
+
+.ansatt-navn {
+  color: #e7f3ee;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.saker-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.saker-head h2 { margin: 0 0 6px; }
+.saker-head .view-lede { margin: 0; }
+
+.filter-row select {
+  width: auto;
+  min-width: 180px;
+}
+
+/* ---------- Sak-liste (admin) ---------- */
+.sak-rad {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.sak-rad:hover {
+  border-color: var(--c-teal);
+  box-shadow: 0 2px 8px rgba(12, 59, 54, 0.08);
+}
+.sak-rad-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.sak-rad-tittel {
+  font-weight: 700;
+  color: var(--c-deepteal);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sak-rad-meta {
+  font-size: 0.85rem;
+  color: var(--c-ink-muted);
+}
+.sak-rad-tags {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.tom-liste {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--c-ink-muted);
+}
+
+/* ---------- Sak-detalj (admin) ---------- */
+#btn-tilbake-liste { margin-bottom: 20px; }
+
+.detalj-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.detalj-head h2 {
+  font-family: var(--font-display);
+  color: var(--c-deepteal);
+  margin: 0;
+}
+
+.detalj-kunde {
+  background: var(--c-teal-soft);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 0.92rem;
+}
+.detalj-kunde strong { color: var(--c-deepteal); }
+
+.detalj-status-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.detalj-status-row label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.detalj-status-row select {
+  width: auto;
+}
+
+.svar-tråd-admin {
+  margin: 24px 0;
+}
+.svar-bobbel-admin {
+  background: var(--c-teal-soft);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.svar-bobbel-admin.internt {
+  background: #fff3da;
+  border-left: 3px solid #b3261e;
+}
+.svar-bobbel-admin-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: var(--c-ink-muted);
+}
+.svar-bobbel-admin p { margin: 0; white-space: pre-wrap; }
+
+.svar-skriv {
+  border-top: 1.5px solid var(--c-border);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+.svar-type-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
