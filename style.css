@@ -127,6 +127,9 @@ body {
   display: flex;
   gap: 8px;
 }
+.topnav[hidden] {
+  display: none;
+}
 .navbtn {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.25);
@@ -487,4 +490,48 @@ select[aria-invalid="true"] {
 /* ---------- High contrast / forced-colors support ---------- */
 @media (forced-colors: active) {
   .btn, .navbtn, .tag, .radio-pill { border: 1px solid currentColor; }
+}
+
+/* ---------- Innlogging / registrering (kundeportal) ---------- */
+.bytt-modus {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1.5px solid var(--c-border);
+  font-size: 0.92rem;
+  color: var(--c-ink-muted);
+}
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--c-teal);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+.link-btn:hover { color: var(--c-deepteal); }
+
+.btn-danger-text {
+  color: var(--c-error);
+}
+.btn-danger-text:hover { background: #fbe4de; }
+
+.tom-liste {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--c-ink-muted);
+}
+
+.kunde-nav .ansatt-navn,
+#kunde-nav .ansatt-navn {
+  color: #e7f3ee;
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-left: 8px;
+}
+
+#kunde-nav[hidden] {
+  display: none;
 }

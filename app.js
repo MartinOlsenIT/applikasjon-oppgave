@@ -1,6 +1,6 @@
 // ===========================================================
-// Bergen Tang og Tare AS — Kundesupport
-// CRUD-applikasjon mot Supabase
+// Bergen Tang og Tare AS — Kundeportal
+// Autentisering + sak-behandling for innloggede kunder
 // ===========================================================
 
 const SUPABASE_URL = 'https://gnzierpfmgfrffypvbkf.supabase.co';
@@ -14,62 +14,9 @@ function announce(msg) {
   requestAnimationFrame(() => { announcer.textContent = msg; });
 }
 
-// ---------- Kategorier (lastet fra databasen, ikke hardkodet) ----------
-let kategoriListe = []; // [{id, namn}]
-
-async function lastKategorier() {
-  const { data, error } = await sb.from('kategorier').select('id, namn').order('namn');
-  if (error) { console.error(error); return; }
-  kategoriListe = data;
-  const selects = [document.getElementById('kategori'), document.getElementById('rediger-kategori')];
-  selects.forEach(sel => {
-    const behold = sel.id === 'kategori' ? '<option value="">Velg kategori …</option>' : '';
-    sel.innerHTML = behold + data.map(k => `<option value="${k.id}">${escapeHtml(k.namn)}</option>`).join('');
-  });
-}
-
-// ---------- Navigasjon mellom visninger ----------
-const navButtons = document.querySelectorAll('.navbtn');
-const views = {
-  ny: document.getElementById('view-ny'),
-  finn: document.getElementById('view-finn'),
-};
-
-navButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const target = btn.dataset.view;
-    navButtons.forEach(b => b.removeAttribute('aria-current'));
-    btn.setAttribute('aria-current', 'page');
-    Object.entries(views).forEach(([key, el]) => {
-      el.hidden = key !== target;
-    });
-    views[target].querySelector('h2')?.focus();
-    announce(`Viser ${btn.textContent}`);
-  });
-});
-
-// ---------- Hjelpefunksjoner ----------
-function genCaseNummer() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // unngår forvekslingsbokstaver (I, O, 0, 1)
-  let suffix = '';
-  for (let i = 0; i < 4; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
-  return `BTT-${suffix}`;
-}
-
-function setFieldError(fieldId, message) {
-  const errEl = document.getElementById(`err-${fieldId}`);
-  const inputEl = document.getElementById(fieldId);
-  if (errEl) errEl.textContent = message;
-  if (inputEl) inputEl.setAttribute('aria-invalid', message ? 'true' : 'false');
-}
-
-function clearErrors(ids) {
-  ids.forEach(id => setFieldError(id, ''));
-}
-
 function escapeHtml(str) {
   const div = document.createElement('div');
-  div.textContent = str;
+  div.textContent = str ?? '';
   return div.innerHTML;
 }
 
@@ -79,96 +26,275 @@ function formatDato(iso) {
   return d.toLocaleDateString('nb-NO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-const STATUS_LABELS = {
-  ny: 'Ny',
-  under_behandling: 'Under behandling',
-  lost: 'Løst',
-};
+const STATUS_LABELS = { ny: 'Ny', under_behandling: 'Under behandling', lost: 'Løst' };
 
-lastKategorier();
+let innloggetKunde = null; // rad fra kunder-tabellen
+let kategoriListe = [];
+let mineSakerCache = [];
+let aktivRedigerId = null;
+let aktivSlettId = null;
+
+const heroSeksjon = document.getElementById('hero-seksjon');
+const viewLogin = document.getElementById('view-login');
+const viewRegistrer = document.getElementById('view-registrer');
+const viewNy = document.getElementById('view-ny');
+const viewMine = document.getElementById('view-mine');
+const kundeNav = document.getElementById('kunde-nav');
+const innloggetNavnEl = document.getElementById('innlogget-kunde-navn');
+
+const alleViews = [viewLogin, viewRegistrer, viewNy, viewMine];
+
+function visView(view) {
+  alleViews.forEach(v => v.hidden = (v !== view));
+  view.querySelector('h2')?.focus?.();
+}
 
 // ===========================================================
-// CREATE — Send nytt spørsmål
+// KATEGORI-LASTING (delt mellom registrer/innlogget tilstand)
+// ===========================================================
+async function lastKategorier() {
+  const { data, error } = await sb.from('kategorier').select('id, namn').order('namn');
+  if (error) { console.error(error); return; }
+  kategoriListe = data || [];
+  const select = document.getElementById('kategori');
+  const redigerSelect = document.getElementById('rediger-kategori');
+  const options = kategoriListe.map(k => `<option value="${k.id}">${escapeHtml(k.namn)}</option>`).join('');
+  if (select) select.innerHTML = '<option value="">Velg kategori …</option>' + options;
+  if (redigerSelect) redigerSelect.innerHTML = options;
+}
+
+// ===========================================================
+// AUTENTISERING
+// ===========================================================
+async function sjekkInnloggingVedStart() {
+  await lastKategorier();
+  const { data } = await sb.auth.getSession();
+  if (data.session) {
+    await etterInnlogging(data.session.user);
+  } else {
+    visView(viewLogin);
+  }
+}
+
+async function etterInnlogging(authUser) {
+  let { data: kunde, error } = await sb
+    .from('kunder')
+    .select('id, navn, epost, telefon, auth_id')
+    .eq('auth_id', authUser.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  // Kunde-rad finnes ikke enda (f.eks. rett etter registrering) -> opprett den
+  if (!kunde) {
+    const navn = authUser.user_metadata?.navn || authUser.email;
+    const telefon = authUser.user_metadata?.telefon || null;
+    const { data: nyKunde, error: opprettErr } = await sb
+      .from('kunder')
+      .insert({ navn, epost: authUser.email, telefon, auth_id: authUser.id })
+      .select()
+      .single();
+    if (opprettErr) {
+      console.error(opprettErr);
+      document.getElementById('status-login').dataset.state = 'error';
+      document.getElementById('status-login').textContent = 'Kunne ikke opprette kundeprofil. Kontakt support.';
+      return;
+    }
+    kunde = nyKunde;
+  }
+
+  innloggetKunde = kunde;
+  heroSeksjon.hidden = true;
+  kundeNav.hidden = false;
+  innloggetNavnEl.textContent = kunde.navn;
+  await lastMineSaker();
+  visView(viewMine);
+  announce(`Innlogget som ${kunde.navn}.`);
+}
+
+// ---------- Logg inn ----------
+const formLogin = document.getElementById('form-login');
+const statusLogin = document.getElementById('status-login');
+
+formLogin.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusLogin.removeAttribute('data-state');
+  statusLogin.textContent = '';
+
+  const epost = document.getElementById('login-epost').value.trim();
+  const passord = document.getElementById('login-passord').value;
+
+  const submitBtn = formLogin.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Logger inn …';
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email: epost, password: passord });
+    if (error) throw error;
+    await etterInnlogging(data.user);
+    formLogin.reset();
+  } catch (err) {
+    console.error(err);
+    statusLogin.dataset.state = 'error';
+    statusLogin.textContent = 'Feil e-post eller passord.';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Logg inn';
+  }
+});
+
+// ---------- Registrer ----------
+const formRegistrer = document.getElementById('form-registrer');
+const statusRegistrer = document.getElementById('status-registrer');
+
+formRegistrer.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusRegistrer.removeAttribute('data-state');
+  statusRegistrer.textContent = '';
+
+  const navn = document.getElementById('reg-navn').value.trim();
+  const epost = document.getElementById('reg-epost').value.trim();
+  const telefon = document.getElementById('reg-telefon').value.trim();
+  const passord = document.getElementById('reg-passord').value;
+
+  document.getElementById('err-reg-navn').textContent = '';
+  document.getElementById('err-reg-epost').textContent = '';
+  document.getElementById('err-reg-passord').textContent = '';
+
+  let harFeil = false;
+  if (navn.length < 2) { document.getElementById('err-reg-navn').textContent = 'Skriv inn fullt navn.'; harFeil = true; }
+  if (!epost.includes('@')) { document.getElementById('err-reg-epost').textContent = 'Skriv inn en gyldig e-postadresse.'; harFeil = true; }
+  if (passord.length < 6) { document.getElementById('err-reg-passord').textContent = 'Passordet må være minst 6 tegn.'; harFeil = true; }
+  if (harFeil) return;
+
+  const submitBtn = formRegistrer.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Registrerer …';
+
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email: epost,
+      password: passord,
+      options: { data: { navn, telefon } },
+    });
+    if (error) throw error;
+
+    if (!data.session) {
+      // Skjedde fordi e-postbekreftelse er påkrevd (skal normalt ikke skje, men håndter trygt)
+      statusRegistrer.dataset.state = 'ok';
+      statusRegistrer.textContent = 'Konto opprettet! Du kan nå logge inn.';
+      formRegistrer.reset();
+      setTimeout(() => visLogin(), 1500);
+      return;
+    }
+
+    await etterInnlogging(data.user);
+    formRegistrer.reset();
+  } catch (err) {
+    console.error(err);
+    statusRegistrer.dataset.state = 'error';
+    if (String(err.message || '').toLowerCase().includes('already registered') || String(err.message || '').toLowerCase().includes('already exists')) {
+      statusRegistrer.textContent = 'Denne e-postadressen er allerede registrert. Prøv å logge inn i stedet.';
+    } else {
+      statusRegistrer.textContent = 'Noe gikk feil under registrering. Prøv igjen.';
+    }
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Registrer konto';
+  }
+});
+
+// ---------- Bytt mellom login/registrer ----------
+function visLogin() { visView(viewLogin); }
+function visRegistrer() { visView(viewRegistrer); }
+
+document.getElementById('btn-vis-registrer').addEventListener('click', visRegistrer);
+document.getElementById('btn-vis-login').addEventListener('click', visLogin);
+
+// ---------- Logg ut ----------
+document.getElementById('btn-logg-ut').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  innloggetKunde = null;
+  kundeNav.hidden = true;
+  heroSeksjon.hidden = false;
+  visView(viewLogin);
+  announce('Logget ut.');
+});
+
+// ---------- Navigasjon (Mine saker / Send spørsmål) ----------
+kundeNav.querySelectorAll('.navbtn[data-view]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    kundeNav.querySelectorAll('.navbtn[data-view]').forEach(b => b.removeAttribute('aria-current'));
+    btn.setAttribute('aria-current', 'page');
+    if (btn.dataset.view === 'ny') {
+      visView(viewNy);
+    } else {
+      visView(viewMine);
+      lastMineSaker();
+    }
+  });
+});
+
+// ===========================================================
+// SEND NYTT SPØRSMÅL
 // ===========================================================
 const formNy = document.getElementById('form-ny');
 const statusNy = document.getElementById('status-ny');
 
+function genererCaseNummer() {
+  const tegn = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let suffix = '';
+  for (let i = 0; i < 4; i++) suffix += tegn[Math.floor(Math.random() * tegn.length)];
+  return `BTT-${suffix}`;
+}
+
 formNy.addEventListener('submit', async (e) => {
   e.preventDefault();
-  clearErrors(['navn', 'epost', 'tittel', 'beskrivelse']);
   statusNy.removeAttribute('data-state');
   statusNy.textContent = '';
 
-  const navn = document.getElementById('navn').value.trim();
-  const epost = document.getElementById('epost').value.trim();
-  const telefon = document.getElementById('telefon').value.trim();
   const kategoriId = document.getElementById('kategori').value;
   const tittel = document.getElementById('tittel').value.trim();
   const beskrivelse = document.getElementById('beskrivelse').value.trim();
   const prioritet = formNy.querySelector('input[name="prioritet"]:checked').value;
 
-  // Inputvalidering
-  let harFeil = false;
-  if (navn.length < 2) { setFieldError('navn', 'Skriv inn fullt navn (minst 2 tegn).'); harFeil = true; }
-  const epostRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!epostRegex.test(epost)) { setFieldError('epost', 'Skriv inn en gyldig e-postadresse.'); harFeil = true; }
-  if (!kategoriId) { setFieldError('tittel', ''); harFeil = true; document.getElementById('kategori').setAttribute('aria-invalid', 'true'); }
-  if (tittel.length < 4) { setFieldError('tittel', 'Tittelen må være minst 4 tegn.'); harFeil = true; }
-  if (beskrivelse.length < 10) { setFieldError('beskrivelse', 'Beskriv spørsmålet med minst 10 tegn.'); harFeil = true; }
+  document.getElementById('err-tittel').textContent = '';
+  document.getElementById('err-beskrivelse').textContent = '';
 
-  if (harFeil) {
-    statusNy.dataset.state = 'error';
-    statusNy.textContent = 'Rett opp feilene i formularet og send på nytt.';
-    formNy.querySelector('[aria-invalid="true"]')?.focus();
-    return;
-  }
+  let harFeil = false;
+  if (tittel.length < 3) { document.getElementById('err-tittel').textContent = 'Skriv en tittel på minst 3 tegn.'; harFeil = true; }
+  if (beskrivelse.length < 10) { document.getElementById('err-beskrivelse').textContent = 'Beskriv spørsmålet med minst 10 tegn.'; harFeil = true; }
+  if (!kategoriId) { harFeil = true; }
+  if (harFeil) return;
 
   const submitBtn = formNy.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sender …';
 
   try {
-    // Finn eller opprett kunde basert på e-post
-    let kundeId;
-    const { data: eksisterende, error: searchErr } = await sb
-      .from('kunder')
-      .select('id')
-      .eq('epost', epost)
-      .limit(1);
-    if (searchErr) throw searchErr;
-
-    if (eksisterende && eksisterende.length > 0) {
-      kundeId = eksisterende[0].id;
-    } else {
-      const { data: nyKunde, error: insertKundeErr } = await sb
-        .from('kunder')
-        .insert({ navn, epost, telefon: telefon || null })
-        .select('id')
-        .single();
-      if (insertKundeErr) throw insertKundeErr;
-      kundeId = nyKunde.id;
-    }
-
-    const caseNummer = genCaseNummer();
-    const { error: insertErr } = await sb.from('forespørsler').insert({
-      case_nummer: caseNummer,
-      kunde_id: kundeId,
+    const { error } = await sb.from('forespørsler').insert({
+      kunde_id: innloggetKunde.id,
       kategori_id: kategoriId,
+      case_nummer: genererCaseNummer(),
       tittel,
       beskrivelse,
       prioritet,
       status: 'ny',
     });
-    if (insertErr) throw insertErr;
+    if (error) throw error;
 
     statusNy.dataset.state = 'ok';
-    statusNy.innerHTML = `Spørsmålet er sendt! Ditt sakenummer er <strong>${escapeHtml(caseNummer)}</strong> — noter dette, du trenger det for å følge opp saken senere.`;
-    announce(`Spørsmål sendt. Sakenummer ${caseNummer}.`);
+    statusNy.textContent = 'Spørsmålet er sendt! Du finner det under «Mine saker».';
+    announce('Spørsmål sendt.');
     formNy.reset();
+    formNy.querySelector('input[name="prioritet"][value="medium"]').checked = true;
   } catch (err) {
     console.error(err);
     statusNy.dataset.state = 'error';
-    statusNy.textContent = 'Noe gikk feil under innsending. Sjekk nettforbindelsen og prøv igjen.';
+    statusNy.textContent = 'Kunne ikke sende spørsmålet. Prøv igjen.';
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Send spørsmål';
@@ -176,137 +302,90 @@ formNy.addEventListener('submit', async (e) => {
 });
 
 // ===========================================================
-// READ — Finn sak (case-nummer + e-post)
+// MINE SAKER
 // ===========================================================
-const formFinn = document.getElementById('form-finn');
-const statusFinn = document.getElementById('status-finn');
-const sakResultat = document.getElementById('sak-resultat');
-let aktivSak = null; // holder gjeldende sak + kunde-epost for senere update/delete-validering
+const mineSakerListe = document.getElementById('mine-saker-liste');
 
-formFinn.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  statusFinn.removeAttribute('data-state');
-  statusFinn.textContent = '';
-  sakResultat.hidden = true;
-  sakResultat.innerHTML = '';
+async function lastMineSaker() {
+  if (!innloggetKunde) return;
+  mineSakerListe.innerHTML = '<p class="field-hint">Laster …</p>';
 
-  const caseInput = document.getElementById('finn-case').value.trim().toUpperCase();
-  const epostInput = document.getElementById('finn-epost').value.trim().toLowerCase();
+  const { data, error } = await sb
+    .from('forespørsler')
+    .select('*, kategorier(namn), svar(id, innhold, opprettet_dato)')
+    .eq('kunde_id', innloggetKunde.id)
+    .order('opprettet_dato', { ascending: false });
 
-  if (!caseInput || !epostInput) {
-    statusFinn.dataset.state = 'error';
-    statusFinn.textContent = 'Fyll ut både sakenummer og e-postadresse.';
+  if (error) {
+    console.error(error);
+    mineSakerListe.innerHTML = '<p class="field-hint">Kunne ikke laste sakene dine.</p>';
     return;
   }
 
-  const submitBtn = formFinn.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Søker …';
+  mineSakerCache = data || [];
+  renderMineSaker();
+}
 
-  try {
-    const { data: saker, error } = await sb
-      .from('forespørsler')
-      .select('*, kunder(navn, epost), kategorier(namn)')
-      .eq('case_nummer', caseInput)
-      .limit(1);
-    if (error) throw error;
-
-    const sak = saker && saker[0];
-    // Sikkerhet/tilgang: kunden får KUN tilgang dersom e-posten matcher kunden
-    // knyttet til saken. Dette er kontrollen som sikrer at folk bare kan
-    // endre/slette sine egne spørsmål, jf. krav i vurderingsskjemaet.
-    if (!sak || !sak.kunder || sak.kunder.epost.toLowerCase() !== epostInput) {
-      statusFinn.dataset.state = 'error';
-      statusFinn.textContent = 'Fant ingen sak med denne kombinasjonen av sakenummer og e-postadresse.';
-      announce('Fant ingen sak.');
-      return;
-    }
-
-    // Hent svar (kun den kundevendte svar-tabellen — interne_kommentarer er
-    // fysisk separert og RLS-blokkert for anon, så den kan aldri hentes her).
-    const { data: svarListe, error: svarErr } = await sb
-      .from('svar')
-      .select('innhold, opprettet_dato, ansatte(navn, rolle)')
-      .eq('forespørsel_id', sak.id)
-      .order('opprettet_dato', { ascending: true });
-    if (svarErr) console.error(svarErr);
-
-    aktivSak = sak;
-    renderSak(sak, svarListe || []);
-    statusFinn.dataset.state = 'ok';
-    statusFinn.textContent = 'Sak funnet.';
-    announce(`Sak ${sak.case_nummer} funnet.`);
-  } catch (err) {
-    console.error(err);
-    statusFinn.dataset.state = 'error';
-    statusFinn.textContent = 'Noe gikk feil under søket. Prøv igjen.';
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Finn sak';
+function renderMineSaker() {
+  if (mineSakerCache.length === 0) {
+    mineSakerListe.innerHTML = `
+      <p class="tom-liste">Du har ikke sendt noen spørsmål enda.</p>
+    `;
+    return;
   }
-});
 
-function renderSak(sak, svarListe) {
-  sakResultat.hidden = false;
-  const statusKlasse = sak.status === 'lost' ? 'tag-status-lost' : (sak.status === 'under_behandling' ? 'tag-status-under_behandling' : 'tag-status-ny');
-  const prioritetKlasse = sak.prioritet === 'hoy' ? 'tag-prioritet-hoy' : '';
-  const kategoriNavn = sak.kategorier ? sak.kategorier.namn : 'Ukategorisert';
-
-  const svarHtml = svarListe.length === 0
-    ? '<p class="field-hint">Ingen svar fra oss enda. Vi følger opp så snart vi kan.</p>'
-    : svarListe.map(s => `
-        <div class="svar-bobbel">
-          <div class="svar-bobbel-head">
-            <strong>${escapeHtml(s.ansatte?.navn || 'Bergen Tang og Tare')}</strong>
-            <span class="field-hint">${s.ansatte?.rolle ? escapeHtml(s.ansatte.rolle) + ' · ' : ''}${formatDato(s.opprettet_dato)}</span>
+  mineSakerListe.innerHTML = mineSakerCache.map(s => {
+    const svarHtml = (s.svar && s.svar.length > 0)
+      ? `<div class="svar-tråd">${s.svar.map(sv => `
+          <div class="svar-bobbel">
+            <div class="svar-bobbel-head"><strong>Svar fra support</strong> · ${formatDato(sv.opprettet_dato)}</div>
+            <p>${escapeHtml(sv.innhold)}</p>
           </div>
-          <p>${escapeHtml(s.innhold)}</p>
+        `).join('')}</div>`
+      : '';
+
+    return `
+      <article class="sak-kort">
+        <div class="sak-kort-head">
+          <div>
+            <h3>${escapeHtml(s.tittel)}</h3>
+            <p class="sak-kort-meta">${escapeHtml(s.case_nummer)} · ${escapeHtml(s.kategorier?.namn || 'Ukategorisert')} · Sendt ${formatDato(s.opprettet_dato)}</p>
+          </div>
+          <span class="tag tag-status-${s.status}">${STATUS_LABELS[s.status] || s.status}</span>
         </div>
-      `).join('');
-
-  sakResultat.innerHTML = `
-    <div class="sak-kort">
-      <div class="sak-kort-head">
-        <h3>${escapeHtml(sak.tittel)}</h3>
-        <span class="sak-case-id">${escapeHtml(sak.case_nummer)}</span>
-      </div>
-      <div class="sak-meta">
-        <span class="tag ${statusKlasse}">${STATUS_LABELS[sak.status] || sak.status}</span>
-        <span class="tag">${escapeHtml(kategoriNavn)}</span>
-        <span class="tag ${prioritetKlasse}">Prioritet: ${sak.prioritet}</span>
-      </div>
-      <p class="sak-beskrivelse">${escapeHtml(sak.beskrivelse)}</p>
-      <p class="field-hint">Sendt ${formatDato(sak.opprettet_dato)}${sak.oppdatert_dato ? ' · oppdatert ' + formatDato(sak.oppdatert_dato) : ''}</p>
-      <div class="sak-kort-actions">
-        <button type="button" class="btn btn-ghost btn-sm" id="btn-rediger-sak">Rediger</button>
-        <button type="button" class="btn btn-danger btn-sm" id="btn-slett-sak">Slett</button>
-      </div>
-      <div class="svar-seksjon">
-        <h4>Svar fra Bergen Tang og Tare</h4>
+        <p class="sak-kort-beskrivelse">${escapeHtml(s.beskrivelse)}</p>
         ${svarHtml}
-      </div>
-    </div>
-  `;
+        <div class="sak-kort-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-rediger="${s.id}">Rediger</button>
+          <button type="button" class="btn btn-ghost btn-sm btn-danger-text" data-slett="${s.id}">Slett</button>
+        </div>
+      </article>
+    `;
+  }).join('');
 
-  document.getElementById('btn-rediger-sak').addEventListener('click', åpneRedigerDialog);
-  document.getElementById('btn-slett-sak').addEventListener('click', åpneSlettDialog);
+  mineSakerListe.querySelectorAll('[data-rediger]').forEach(btn => {
+    btn.addEventListener('click', () => åpneRedigerDialog(btn.dataset.rediger));
+  });
+  mineSakerListe.querySelectorAll('[data-slett]').forEach(btn => {
+    btn.addEventListener('click', () => åpneSlettDialog(btn.dataset.slett));
+  });
 }
 
 // ===========================================================
-// UPDATE — Rediger sak
+// REDIGER-DIALOG
 // ===========================================================
 const dialogRediger = document.getElementById('dialog-rediger');
 const formRediger = document.getElementById('form-rediger');
 const statusRediger = document.getElementById('status-rediger');
-let sisteFokusElement = null;
 
-function åpneRedigerDialog() {
-  if (!aktivSak) return;
-  sisteFokusElement = document.activeElement;
-  document.getElementById('rediger-id').value = aktivSak.id;
-  document.getElementById('rediger-tittel').value = aktivSak.tittel;
-  document.getElementById('rediger-beskrivelse').value = aktivSak.beskrivelse;
-  document.getElementById('rediger-kategori').value = aktivSak.kategori_id;
+function åpneRedigerDialog(sakId) {
+  const sak = mineSakerCache.find(s => s.id === sakId);
+  if (!sak) return;
+  aktivRedigerId = sakId;
+  document.getElementById('rediger-id').value = sakId;
+  document.getElementById('rediger-tittel').value = sak.tittel;
+  document.getElementById('rediger-beskrivelse').value = sak.beskrivelse;
+  document.getElementById('rediger-kategori').value = sak.kategori_id;
   statusRediger.textContent = '';
   statusRediger.removeAttribute('data-state');
   dialogRediger.hidden = false;
@@ -315,119 +394,84 @@ function åpneRedigerDialog() {
 
 function lukkRedigerDialog() {
   dialogRediger.hidden = true;
-  sisteFokusElement?.focus();
+  aktivRedigerId = null;
 }
 
 document.getElementById('btn-avbryt-rediger').addEventListener('click', lukkRedigerDialog);
-dialogRediger.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') lukkRedigerDialog();
-});
 
 formRediger.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const id = document.getElementById('rediger-id').value;
   const tittel = document.getElementById('rediger-tittel').value.trim();
   const beskrivelse = document.getElementById('rediger-beskrivelse').value.trim();
   const kategoriId = document.getElementById('rediger-kategori').value;
 
-  if (tittel.length < 4 || beskrivelse.length < 10) {
+  if (tittel.length < 3 || beskrivelse.length < 10) {
     statusRediger.dataset.state = 'error';
-    statusRediger.textContent = 'Tittel må ha minst 4 tegn og beskrivelse minst 10 tegn.';
-    return;
-  }
-
-  // Sikkerhetssjekk: bekreft at saken faktisk eies av aktivSak (samme id) før vi
-  // skriver — vi opererer aldri på en id hentet fra et felt brukeren kan endre.
-  if (!aktivSak || aktivSak.id !== id) {
-    statusRediger.dataset.state = 'error';
-    statusRediger.textContent = 'Kunne ikke verifisere saken. Last siden på nytt og prøv igjen.';
+    statusRediger.textContent = 'Fyll ut tittel og beskrivelse korrekt.';
     return;
   }
 
   const submitBtn = formRediger.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
+  submitBtn.textContent = 'Lagrer …';
 
   try {
-    const { data, error } = await sb
+    const { error } = await sb
       .from('forespørsler')
       .update({ tittel, beskrivelse, kategori_id: kategoriId, oppdatert_dato: new Date().toISOString() })
-      .eq('id', id)
-      .select('*, kunder(navn, epost), kategorier(namn)')
-      .single();
+      .eq('id', aktivRedigerId);
     if (error) throw error;
 
-    const { data: svarListe } = await sb
-      .from('svar')
-      .select('innhold, opprettet_dato, ansatte(navn, rolle)')
-      .eq('forespørsel_id', id)
-      .order('opprettet_dato', { ascending: true });
-
-    aktivSak = data;
-    renderSak(data, svarListe || []);
+    announce('Endringer lagret.');
     lukkRedigerDialog();
-    announce('Spørsmålet er oppdatert.');
+    await lastMineSaker();
   } catch (err) {
     console.error(err);
     statusRediger.dataset.state = 'error';
-    statusRediger.textContent = 'Kunne ikke lagre endringene. Prøv igjen.';
+    statusRediger.textContent = 'Kunne ikke lagre endringene.';
   } finally {
     submitBtn.disabled = false;
+    submitBtn.textContent = 'Lagre endringer';
   }
 });
 
 // ===========================================================
-// DELETE — Slett sak
+// SLETT-DIALOG
 // ===========================================================
 const dialogSlett = document.getElementById('dialog-slett');
 
-function åpneSlettDialog() {
-  if (!aktivSak) return;
-  sisteFokusElement = document.activeElement;
+function åpneSlettDialog(sakId) {
+  aktivSlettId = sakId;
   dialogSlett.hidden = false;
-  document.getElementById('btn-avbryt-slett').focus();
+  document.getElementById('btn-bekreft-slett').focus();
 }
 
 function lukkSlettDialog() {
   dialogSlett.hidden = true;
-  sisteFokusElement?.focus();
+  aktivSlettId = null;
 }
 
 document.getElementById('btn-avbryt-slett').addEventListener('click', lukkSlettDialog);
-dialogSlett.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') lukkSlettDialog();
-});
 
 document.getElementById('btn-bekreft-slett').addEventListener('click', async () => {
-  if (!aktivSak) return;
+  if (!aktivSlettId) return;
   const btn = document.getElementById('btn-bekreft-slett');
   btn.disabled = true;
   btn.textContent = 'Sletter …';
 
   try {
-    const { error } = await sb.from('forespørsler').delete().eq('id', aktivSak.id);
+    const { error } = await sb.from('forespørsler').delete().eq('id', aktivSlettId);
     if (error) throw error;
-
+    announce('Saken er slettet.');
     lukkSlettDialog();
-    sakResultat.hidden = true;
-    sakResultat.innerHTML = '';
-    statusFinn.dataset.state = 'ok';
-    statusFinn.textContent = `Sak ${aktivSak.case_nummer} er slettet.`;
-    announce(`Sak ${aktivSak.case_nummer} slettet.`);
-    aktivSak = null;
+    await lastMineSaker();
   } catch (err) {
     console.error(err);
-    lukkSlettDialog();
-    statusFinn.dataset.state = 'error';
-    statusFinn.textContent = 'Kunne ikke slette saken. Prøv igjen.';
+    announce('Kunne ikke slette saken.');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Slett saken';
   }
 });
 
-// Lukk dialoger ved klikk utenfor
-[dialogRediger, dialogSlett].forEach(dialog => {
-  dialog.addEventListener('click', (e) => {
-    if (e.target === dialog) dialog.hidden = true;
-  });
-});
+sjekkInnloggingVedStart();

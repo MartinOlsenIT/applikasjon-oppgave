@@ -27,51 +27,95 @@
         <span class="brand-sub">Kundesupport</span>
       </span>
     </div>
-    <nav class="topnav" aria-label="Hovednavigasjon">
-      <button type="button" class="navbtn" data-view="ny" aria-current="page">Send spørsmål</button>
-      <button type="button" class="navbtn" data-view="finn">Finn sak</button>
+    <nav class="topnav" aria-label="Hovednavigasjon" id="kunde-nav" hidden>
+      <button type="button" class="navbtn" data-view="mine" aria-current="page">Mine saker</button>
+      <button type="button" class="navbtn" data-view="ny">Send spørsmål</button>
+      <span class="ansatt-navn" id="innlogget-kunde-navn"></span>
+      <button type="button" class="navbtn" id="btn-logg-ut">Logg ut</button>
     </nav>
   </div>
 </header>
 
 <main id="hovedinnhold" class="wrap">
 
-  <section class="hero" aria-labelledby="hero-tittel">
+  <section class="hero" aria-labelledby="hero-tittel" id="hero-seksjon">
     <h1 id="hero-tittel">Vi er her for å hjelpe</h1>
-    <p class="hero-lede">Har du et teknisk spørsmål, eller trenger du assistanse med utstyret fra Bergen Tang og Tare? Send oss en henvendelse under, eller finn igjen en sak du allerede har sendt.</p>
+    <p class="hero-lede">Logg inn eller registrer deg for å sende spørsmål til Bergen Tang og Tare, og følge opp sakene dine.</p>
   </section>
 
-  <!-- VISNING: Send nytt spørsmål -->
-  <section id="view-ny" class="view" aria-labelledby="ny-tittel">
-    <h2 id="ny-tittel">Send et nytt spørsmål</h2>
-    <p class="view-lede">Fyll ut formularet under. Du får et sakenummer du kan bruke for å følge opp, endre eller slette spørsmålet senere.</p>
+  <!-- VISNING: Logg inn -->
+  <section id="view-login" class="view" aria-labelledby="login-tittel">
+    <h2 id="login-tittel" tabindex="-1">Logg inn</h2>
+    <p class="view-lede">Logg inn med e-postadressen og passordet du registrerte deg med.</p>
 
-    <form id="form-ny" novalidate>
+    <form id="form-login" novalidate>
+      <div class="field">
+        <label for="login-epost">E-postadresse <span class="required" aria-hidden="true">*</span></label>
+        <input type="email" id="login-epost" autocomplete="username" required aria-required="true">
+      </div>
+      <div class="field">
+        <label for="login-passord">Passord <span class="required" aria-hidden="true">*</span></label>
+        <input type="password" id="login-passord" autocomplete="current-password" required aria-required="true">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Logg inn</button>
+      </div>
+      <p class="form-status" id="status-login" role="status" aria-live="polite"></p>
+    </form>
+
+    <p class="bytt-modus">Ny kunde? <button type="button" class="link-btn" id="btn-vis-registrer">Registrer deg her</button></p>
+  </section>
+
+  <!-- VISNING: Registrer ny kunde -->
+  <section id="view-registrer" class="view" hidden aria-labelledby="registrer-tittel">
+    <h2 id="registrer-tittel" tabindex="-1">Registrer deg</h2>
+    <p class="view-lede">Opprett en konto for å sende spørsmål og følge opp saker.</p>
+
+    <form id="form-registrer" novalidate>
       <div class="grid-2">
         <div class="field">
-          <label for="navn">Fullt navn <span class="required" aria-hidden="true">*</span></label>
-          <input type="text" id="navn" name="navn" autocomplete="name" required aria-required="true">
-          <p class="field-error" id="err-navn" role="alert"></p>
+          <label for="reg-navn">Fullt navn <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="reg-navn" autocomplete="name" required aria-required="true">
+          <p class="field-error" id="err-reg-navn" role="alert"></p>
         </div>
         <div class="field">
-          <label for="epost">E-postadresse <span class="required" aria-hidden="true">*</span></label>
-          <input type="email" id="epost" name="epost" autocomplete="email" required aria-required="true" aria-describedby="hint-epost">
-          <p class="field-hint" id="hint-epost">Brukes til å finne tilbake til saken din.</p>
-          <p class="field-error" id="err-epost" role="alert"></p>
+          <label for="reg-epost">E-postadresse <span class="required" aria-hidden="true">*</span></label>
+          <input type="email" id="reg-epost" autocomplete="email" required aria-required="true">
+          <p class="field-error" id="err-reg-epost" role="alert"></p>
         </div>
       </div>
-
       <div class="grid-2">
         <div class="field">
-          <label for="telefon">Telefonnummer</label>
-          <input type="tel" id="telefon" name="telefon" autocomplete="tel">
+          <label for="reg-telefon">Telefonnummer</label>
+          <input type="tel" id="reg-telefon" autocomplete="tel">
         </div>
         <div class="field">
-          <label for="kategori">Kategori <span class="required" aria-hidden="true">*</span></label>
-          <select id="kategori" name="kategori" required aria-required="true">
-            <option value="">Velg kategori …</option>
-          </select>
+          <label for="reg-passord">Passord <span class="required" aria-hidden="true">*</span></label>
+          <input type="password" id="reg-passord" autocomplete="new-password" required aria-required="true" aria-describedby="hint-reg-passord" minlength="6">
+          <p class="field-hint" id="hint-reg-passord">Minst 6 tegn.</p>
+          <p class="field-error" id="err-reg-passord" role="alert"></p>
         </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Registrer konto</button>
+      </div>
+      <p class="form-status" id="status-registrer" role="status" aria-live="polite"></p>
+    </form>
+
+    <p class="bytt-modus">Har du allerede en konto? <button type="button" class="link-btn" id="btn-vis-login">Logg inn her</button></p>
+  </section>
+
+  <!-- VISNING: Send nytt spørsmål (kun innlogget) -->
+  <section id="view-ny" class="view" hidden aria-labelledby="ny-tittel">
+    <h2 id="ny-tittel" tabindex="-1">Send et nytt spørsmål</h2>
+    <p class="view-lede">Fyll ut formularet under. Spørsmålet legges til i «Mine saker».</p>
+
+    <form id="form-ny" novalidate>
+      <div class="field">
+        <label for="kategori">Kategori <span class="required" aria-hidden="true">*</span></label>
+        <select id="kategori" name="kategori" required aria-required="true">
+          <option value="">Velg kategori …</option>
+        </select>
       </div>
 
       <div class="field">
@@ -103,29 +147,11 @@
     </form>
   </section>
 
-  <!-- VISNING: Finn / administrer sak -->
-  <section id="view-finn" class="view" hidden aria-labelledby="finn-tittel">
-    <h2 id="finn-tittel">Finn saken din</h2>
-    <p class="view-lede">Skriv inn sakenummeret og e-postadressen du brukte da du sendte spørsmålet.</p>
-
-    <form id="form-finn" novalidate>
-      <div class="grid-2">
-        <div class="field">
-          <label for="finn-case">Sakenummer <span class="required" aria-hidden="true">*</span></label>
-          <input type="text" id="finn-case" name="finn-case" placeholder="f.eks. BTT-7K2P" required aria-required="true">
-        </div>
-        <div class="field">
-          <label for="finn-epost">E-postadresse <span class="required" aria-hidden="true">*</span></label>
-          <input type="email" id="finn-epost" name="finn-epost" required aria-required="true">
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Finn sak</button>
-      </div>
-      <p class="form-status" id="status-finn" role="status" aria-live="polite"></p>
-    </form>
-
-    <div id="sak-resultat" hidden></div>
+  <!-- VISNING: Mine saker (kun innlogget) -->
+  <section id="view-mine" class="view" hidden aria-labelledby="mine-tittel">
+    <h2 id="mine-tittel" tabindex="-1">Mine saker</h2>
+    <p class="view-lede">Her ser du alle spørsmål du har sendt, og kan endre eller slette dem.</p>
+    <div id="mine-saker-liste" aria-live="polite"></div>
   </section>
 
 </main>
