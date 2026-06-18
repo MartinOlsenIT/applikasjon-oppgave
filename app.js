@@ -99,6 +99,17 @@ async function etterInnlogging(authUser) {
       .single();
     if (opprettErr) {
       console.error(opprettErr);
+      // Foreign key-feil (23503) betyr at auth-brukeren ikke finnes lenger på serveren,
+      // selv om nettleseren fortsatt har en gammel/ugyldig sesjon lagret lokalt.
+      // Logg ut trygt og send brukeren tilbake til innloggingssiden i stedet for å krasje.
+      if (opprettErr.code === '23503') {
+        await sb.auth.signOut();
+        kundeNav.hidden = true;
+        heroSeksjon.hidden = false;
+        visView(viewLogin);
+        announce('Sesjonen din var ugyldig. Logg inn på nytt.');
+        return;
+      }
       document.getElementById('status-login').dataset.state = 'error';
       document.getElementById('status-login').textContent = 'Kunne ikke opprette kundeprofil. Kontakt support.';
       return;
